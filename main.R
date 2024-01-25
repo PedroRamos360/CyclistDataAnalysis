@@ -21,32 +21,32 @@ cyclistic_2023 = do.call(rbind, data_list)
 # Free memory allocated
 rm(data_list)
 
-
-csv_data_2023_12 = read.csv("202312-divvy-tripdata.csv")
-View(csv_data_2023_12)
+# Preview of the data
+head(cyclistic_2023)
 
 # 1) Verifying the integrity of the data:
 # Make sure all essential data is present in each row:
-empty_counts = sapply(csv_data_2023_12, function(x) sum(is.null(x) | x == ""))
+empty_counts = sapply(cyclistic_2023, function(x) sum(is.null(x) | x == ""))
 print(empty_counts)
 # With that is possible to conclude that there are lots of rows if missing values
 # for the station names and ids (for the end and start), also end_lat and end_lng
 # returned NA which should be further investigated.
 # Using the following code:
-empty_counts = sapply(csv_data_2023_12, function(x) sum(is.na(x)))
+empty_counts = sapply(cyclistic_2023, function(x) sum(is.na(x)))
 print(empty_counts)
+rm(empty_counts)
 # We can verify that there are 239 rows for which there is no end_lat and end_lng
 # which are likely bikes that were broken or stolen before reaching their destinations:
-na_end_positions = csv_data_2023_12 %>%
+na_end_positions = cyclistic_2023 %>%
   filter(is.na(end_lat))
-View(na_end_positions)
+head(na_end_positions)
 # Graph comparing the amount of problematic bikes from casual members x anual members
 ggplot(na_end_positions, aes(
   x = member_casual,
   fill=member_casual,
 )) + geom_bar() + labs(title="Anual members with bike problems x\nCasual members with bike problems")
 # Graph comparing the total amount of anual members against total casual riders
-ggplot(csv_data_2023_12, aes(
+ggplot(cyclistic_2023, aes(
   x = member_casual,
   fill=member_casual
 )) + geom_bar() + labs(title="Total anual members x\nTotal casual members")
@@ -62,7 +62,8 @@ ggplot(csv_data_2023_12, aes(
 # Total trip seconds:
 library(lubridate)
 library(dplyr)
-manipulated_data = csv_data_2023_12
+manipulated_data = cyclistic_2023
+rm(cyclistic_2023)
 manipulated_data$started_at <- ymd_hms(manipulated_data$started_at)
 manipulated_data$ended_at <- ymd_hms(manipulated_data$ended_at)
 manipulated_data$total_trip_seconds = as.numeric(manipulated_data$ended_at - manipulated_data$started_at)
@@ -111,6 +112,7 @@ distance_time_trips = manipulated_data %>%
   mutate(delta_lat = abs(end_lat - start_lat), delta_lng = abs(end_lng - start_lng)) %>%
   mutate(trip_distance_km = haversine_distance(delta_lat, delta_lng))
 
+rm(manipulated_data)
 View(distance_time_trips)
 
 # 3) Use additional calculated data to compare casual riders and members:
@@ -145,7 +147,7 @@ ggplot(trips_0_distance, aes(
   x = member_casual,
   fill = member_casual
 )) + geom_bar()
-
+rm(trips_0_distance)
 # Comparison of trips that started on weekdays between groups
 trips_in_weekdays = distance_time_trips %>%
   group_by(member_casual) %>%
@@ -156,7 +158,6 @@ trips_in_weekdays = distance_time_trips %>%
   )
 
 print(trips_in_weekdays)
-
 
 casual_data <- subset(trips_in_weekdays, member_casual == "casual")
 member_data <- subset(trips_in_weekdays, member_casual == "member")
@@ -171,4 +172,3 @@ colors = c("orange", "blue")
 par(mfrow = c(1, 2))
 pie(casual_data, labels = labels, col = colors, main = "Casual riders weekdays x\nweekends distribution")
 pie(member_data, labels = labels, col = colors, main = "Members weekdays x\nweekends distribution")
-  
